@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bit Price</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            font-size: 32px;
+            font-weight: bold;
+            margin-top: 32px;
+            margin-bottom: 32px;
+        }
+
+        .price {
+            font-size: 24px;
+            margin-bottom: 32px;
+        }
+
+        .crossed-value {
+            font-size: 18px;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container text-center">
+        <h1 class="header mt-5 mb-4">Bit Price</h1>
+        <p id="bitprice" class="price mb-4">Последняя цена Bitcoin: <%= bitprice %> USD</p>
+        <p id="crossedValue" class="crossed-value mb-4">После пересечения здесь будет информация</p>
+    </div>
+    <script>
+        const trackedValues = [60000, 61000, 62000, 63000, 64000, 65000, 66000, 67000, 68000, 69000, 70000, 71000, 72000, 73000, 74000, 75000, 76000, 77000, 78000, 79000, 80000];
+        let prevPrice = null;
+        let prevCrossedMessage = 'После пересечения здесь будет информация';
+
+        function updateBitPrice() {
+            $.ajax({
+                url: '/login/getLatestBitPrice',
+                type: 'GET',
+                success: function(response) {
+                    console.log('good');
+                    const currentPrice = parseFloat(response);
+
+                    $('#bitprice').text(`Последняя цена Bitcoin: ${currentPrice}`);
+
+                    let crossedMessage = '';
+
+                    for (let i = 0; i < trackedValues.length; i++) {
+                        const value = trackedValues[i];
+                        let direction = '';
+
+                        if (prevPrice !== null && currentPrice > value && prevPrice <= value) {
+                            direction = 'возрастая';
+                        } else if (prevPrice !== null && currentPrice < value && prevPrice >= value) {
+                            direction = 'падая';
+                        }
+
+                        if (direction) {
+                            crossedMessage = `Цена пересекла ${value}, ${direction}`;
+                            break;
+                        }
+                    }
+
+                    if (!crossedMessage && prevCrossedMessage) {
+                        $('#crossedValue').text(prevCrossedMessage);
+                    } else {
+                        $('#crossedValue').text(crossedMessage);
+                        prevCrossedMessage = crossedMessage;
+                    }
+
+                    prevPrice = currentPrice;
+                },
+                error: function(xhr, status, error) {
+                    console.error('Ошибка:', error);
+                }
+            });
+        }
+
+        setInterval(updateBitPrice, 6000);
+    </script>
+</body>
+</html>
